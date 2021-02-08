@@ -76,12 +76,12 @@ def hello():
             cur.execute('INSERT INTO todo_list.todos (user_id, descripcion) VALUES (%s,%s)', (user_id, description))
             mysql.connection.commit()
             #flash
-            flash('Tarea registrada')
+            flash('Tarea registrada','success')
             return redirect(url_for('hello'))
         except Exception as e:
             print(e)
             #flash
-            flash('hubo pedo')
+            flash('Ocurrió un error','danger')
 
     return render_template('hello.html', **context)
 
@@ -99,7 +99,7 @@ def signup():
             cur.execute('INSERT INTO todo_list.users (name, password) VALUES (%s,%s)', (username, password))
             mysql.connection.commit()
             #flash
-            flash('Nombre de usuario registrado con exito')
+            flash('Nombre de usuario registrado con exito','success')
             cur.execute('SELECT id_user from todo_list.users WHERE name=%s', ([username]))
             user_id = cur.fetchall()
             session['user_id'] = user_id[0]
@@ -109,7 +109,7 @@ def signup():
         except Exception as e:
             print(e)
             #flash
-            flash('Nombre de usuario ya esta registrado')
+            flash('Nombre de usuario ya esta registrado','warning')
         return redirect(url_for('Index'))
 
     return render_template('signup.html', **context)
@@ -141,17 +141,17 @@ def login():
                     session['user_id'] = user[0]
                     session['name'] = user[1]
                     session['password'] = user[2]
-                    flash('Bienvenido!')
+                    flash('Bienvenido!','success')
                     return redirect(url_for('hello'))
-                flash('Usuario o contraseña incorrectos')
+                flash('Usuario o contraseña incorrectos', 'warning')
                 return redirect(url_for('login'))
             else:
-                flash('El usuario no existe')
+                flash('El usuario no existe', 'danger')
                 return redirect(url_for('Index'))
         except  Exception as e:
             print(e)
             #flash
-            flash('El usuario no existe')
+            flash('El usuario no existe', 'danger')
         return redirect(url_for('Index'))
 
     return render_template('login.html', **context)
@@ -167,7 +167,7 @@ def get_contact(id):
     cur = mysql.connection.cursor()
     cur.execute('UPDATE todo_list.todos SET complet=1 WHERE id_todos=%s',[id])
     mysql.connection.commit()
-    flash('tarea terminada')
+    flash('tarea terminada','success')
     return redirect(url_for('hello'))
 
 
@@ -176,8 +176,9 @@ def delete_contact(id):
     cur = mysql.connection.cursor()
     cur.execute('DELETE FROM todo_list.todos WHERE id_todos = {0}'.format(id))
     mysql.connection.commit()
-    flash('tarea Eliminada')
-    return redirect(url_for('hello'))
+    flash('tarea Eliminada','warning')
+    session.clear()
+    return make_response(redirect('/'))
 
 
 @app.route('/perfil/<id>', methods = ['POST','GET'])
@@ -196,15 +197,15 @@ def perfil(id):
             cur = mysql.connection.cursor()
             cur.execute('UPDATE todo_list.users SET password=%s WHERE id_user=%s',[password,id])
             mysql.connection.commit()
-            flash('Contraseña actualizada')
+            flash('Contraseña actualizada','success')
             return redirect(url_for('hello'))
-        flash('Las contraseñas no coinciden')
+        flash('Las contraseñas no coinciden', 'warning')
         return render_template('profile.html', **context)
     if request.method == 'POST':
         cur = mysql.connection.cursor()
         cur.execute('DELETE FROM todo_list.users WHERE id_user =%s',[id])
         mysql.connection.commit()
-        flash('Cuenta eliminada')
+        flash('Cuenta eliminada', 'danger')
         return redirect(url_for('logout'))
 
     return render_template('profile.html', **context)
