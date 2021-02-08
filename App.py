@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, make_response, session
 from flask_mysqldb import MySQL
 from flask_bootstrap import Bootstrap
+from flask_wtf import FlaskForm
 from forms import LoginForm, DeleteTodoForm, UpdateTodoForm, TodoForm, ChangePassword
 from config import Config
 # initializations
@@ -188,6 +189,17 @@ def perfil(id):
         'name':name,
         'change_password':change_password
     }
+    if change_password.validate_on_submit():
+        password = change_password.password.data
+        repeat_password = change_password.repeat_password.data
+        if password == repeat_password:
+            cur = mysql.connection.cursor()
+            cur.execute('UPDATE todo_list.users SET password=%s WHERE id_user=%s',[password,id])
+            mysql.connection.commit()
+            flash('Contraseña actualizada')
+            return redirect(url_for('hello'))
+        flash('Las contraseñas no coinciden')
+        return render_template('profile.html', **context)
     if request.method == 'POST':
         cur = mysql.connection.cursor()
         cur.execute('DELETE FROM todo_list.users WHERE id_user =%s',[id])
