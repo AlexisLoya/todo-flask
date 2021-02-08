@@ -1,0 +1,44 @@
+<div class="navbar navbar-inverse" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            {% if session['name'] %}
+            <a class="navbar-brand" href="{{ url_for('hello') }}">
+               
+            {% else %}
+            <a class="navbar-brand" href="/login">
+            {% endif %}    
+            <img src="{{ url_for('static', filename='images/logo.png') }}" style="max-width: 48px" alt="To do list"
+            width="30" height="24">
+            </a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                {% if session['name'] %}
+                <li><a href="{{ url_for('hello') }}">Inicio</a></li>
+                <li>
+                    <a href="/logout">Logout</a>
+                </li>
+                <li>
+                    <a href="/perfil/{{session['user_id']}}">Profile</a>
+                </li>
+                {% else %}
+                <li><a href="/login">Inicio</a></li>
+                <li>
+                    <a href="/login">Login</a>
+                </li>
+                <li>
+                    <a href="/signup">Register</a>
+                </li>
+                
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</div>

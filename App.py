@@ -1,75 +1,205 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, make_response, session
 from flask_mysqldb import MySQL
-
+from flask_bootstrap import Bootstrap
+from forms import LoginForm, DeleteTodoForm, UpdateTodoForm, TodoForm, ChangePassword
+from config import Config
 # initializations
 app = Flask(__name__)
 
 # Mysql Connection
-app.config['MYSQL_HOST'] = 'localhost' 
+app.config['MYSQL_HOST'] = '127.0.0.1'
+app.config['MYSQL_PORT'] = 3307
 app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = 'password'
-app.config['MYSQL_DB'] = 'flaskcrud'
+app.config['MYSQL_PASSWORD'] = 'root'
+app.config['MYSQL_DB'] = 'todo_list'
+#Bootstrap
+bootstrap = Bootstrap(app)
+
+app.config.from_object(Config)
+
+#Mysql
 mysql = MySQL(app)
 
-# settings
-app.secret_key = "mysecretkey"
 
 # routes
+@app.errorhandler(404)
+def not_found(error):
+    return render_template('404.html', error=error)
+
+
+@app.errorhandler(500)
+def internal_server_error(error):
+    return render_template('500.html', error=error)
+
+
 @app.route('/')
 def Index():
-    cur = mysql.connection.cursor()
-    cur.execute('SELECT * FROM contacts')
-    data = cur.fetchall()
-    cur.close()
-    return render_template('index.html', contacts = data)
+    user_ip = request.remote_addr
+    session['user_ip'] = user_ip
+    return make_response(redirect('/login'))
 
-@app.route('/add_contact', methods=['POST'])
-def add_contact():
-    if request.method == 'POST':
-        fullname = request.form['fullname']
-        phone = request.form['phone']
-        email = request.form['email']
-        cur = mysql.connection.cursor()
-        cur.execute("INSERT INTO contacts (fullname, phone, email) VALUES (%s,%s,%s)", (fullname, phone, email))
-        mysql.connection.commit()
-        flash('Contact Added successfully')
+@app.route('/hello', methods=['GET', 'POST'])
+def hello():
+    #tomar cookie del response
+    user_ip = session.get('user_ip')
+    name = session.get('name')
+    #todos
+    cur = mysql.connection.cursor()
+    cur.execute('SELECT id_user, name, id_todos, descripcion, complet from todo_list.users join todos t on users.id_user = t.user_id WHERE name=%s'
+    , ([name]))
+    todos = cur.fetchall()
+    session['todos'] = todos
+    
+    todo_form = TodoForm()
+    delete_form = DeleteTodoForm()
+    update_form = UpdateTodoForm()
+    #diccionario
+    context = {
+        'user_ip': user_ip,
+        'name':name,
+        'todo_form': todo_form,
+        'delete_form': delete_form,
+        'update_form': update_form,
+        'todos':todos
+    }
+    if todo_form.validate_on_submit():     
+        try:
+            description = str(todo_form.description.data)
+            user_id = session.get('user_id')
+            #user_id = int(user_id[0])
+            print('id_user ---->',[user_id])
+            print(type(user_id))
+            print('description ---->',description)
+            print(type(description))
+            cur = mysql.connection.cursor()
+            cur.execute('INSERT INTO todo_list.todos (user_id, descripcion) VALUES (%s,%s)', (user_id, description))
+            mysql.connection.commit()
+            #flash
+            flash('Tarea registrada')
+            return redirect(url_for('hello'))
+        except Exception as e:
+            print(e)
+            #flash
+            flash('hubo pedo')
+
+    return render_template('hello.html', **context)
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    login_form = LoginForm()
+    context = {
+        'signup_form':LoginForm()
+    }
+    if login_form.validate_on_submit():
+        username = login_form.username.data
+        password = login_form.password.data
+        try:
+            cur = mysql.connection.cursor()
+            cur.execute('INSERT INTO todo_list.users (name, password) VALUES (%s,%s)', (username, password))
+            mysql.connection.commit()
+            #flash
+            flash('Nombre de usuario registrado con exito')
+            cur.execute('SELECT id_user from todo_list.users WHERE name=%s', ([username]))
+            user_id = cur.fetchall()
+            session['user_id'] = user_id[0]
+            session['name'] = username
+            session['password'] = password
+            return redirect(url_for('hello'))
+        except Exception as e:
+            print(e)
+            #flash
+            flash('Nombre de usuario ya esta registrado')
         return redirect(url_for('Index'))
+
+    return render_template('signup.html', **context)
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    login_form = LoginForm()
+    context = {
+        'login_form':LoginForm()
+    }
+    if login_form.validate_on_submit():
+        username = login_form.username.data
+        password = login_form.password.data
+        print(1)
+        try:
+            print(1.1)
+            curl = mysql.connection.cursor()
+            curl.execute("SELECT * FROM todo_list.users WHERE name=%s",([username]))
+            user = curl.fetchone()
+            user_password = str(user[2])
+            print(user_password, 'type:',type(user_password))
+            print(password, 'type:',type(password))
+            curl.close()
+            print(2)
+            if len(user) > 0:
+                print(3)
+                if user[2] == password:
+                    print(4)
+                    session['user_id'] = user[0]
+                    session['name'] = user[1]
+                    session['password'] = user[2]
+                    flash('Bienvenido!')
+                    return redirect(url_for('hello'))
+                flash('Usuario o contraseña incorrectos')
+                return redirect(url_for('login'))
+            else:
+                flash('El usuario no existe')
+                return redirect(url_for('Index'))
+        except  Exception as e:
+            print(e)
+            #flash
+            flash('El usuario no existe')
+        return redirect(url_for('Index'))
+
+    return render_template('login.html', **context)
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return make_response(redirect('/'))
+
 
 @app.route('/edit/<id>', methods = ['POST', 'GET'])
 def get_contact(id):
     cur = mysql.connection.cursor()
-    cur.execute('SELECT * FROM contacts WHERE id = %s', (id))
-    data = cur.fetchall()
-    cur.close()
-    print(data[0])
-    return render_template('edit-contact.html', contact = data[0])
+    cur.execute('UPDATE todo_list.todos SET complet=1 WHERE id_todos=%s',[id])
+    mysql.connection.commit()
+    flash('tarea terminada')
+    return redirect(url_for('hello'))
 
-@app.route('/update/<id>', methods=['POST'])
-def update_contact(id):
-    if request.method == 'POST':
-        fullname = request.form['fullname']
-        phone = request.form['phone']
-        email = request.form['email']
-        cur = mysql.connection.cursor()
-        cur.execute("""
-            UPDATE contacts
-            SET fullname = %s,
-                email = %s,
-                phone = %s
-            WHERE id = %s
-        """, (fullname, email, phone, id))
-        flash('Contact Updated Successfully')
-        mysql.connection.commit()
-        return redirect(url_for('Index'))
 
 @app.route('/delete/<string:id>', methods = ['POST','GET'])
 def delete_contact(id):
     cur = mysql.connection.cursor()
-    cur.execute('DELETE FROM contacts WHERE id = {0}'.format(id))
+    cur.execute('DELETE FROM todo_list.todos WHERE id_todos = {0}'.format(id))
     mysql.connection.commit()
-    flash('Contact Removed Successfully')
-    return redirect(url_for('Index'))
+    flash('tarea Eliminada')
+    return redirect(url_for('hello'))
 
+
+@app.route('/perfil/<id>', methods = ['POST','GET'])
+def perfil(id):
+    name = session.get('name')
+    user_id = session.get('user_id')
+    change_password = ChangePassword()
+    context = {
+        'name':name,
+        'change_password':change_password
+    }
+    if request.method == 'POST':
+        cur = mysql.connection.cursor()
+        cur.execute('DELETE FROM todo_list.users WHERE id_user =%s',[id])
+        mysql.connection.commit()
+        flash('Cuenta eliminada')
+        return redirect(url_for('logout'))
+
+    return render_template('profile.html', **context)
+    
+'''
+
+'''
 # starting the app
 if __name__ == "__main__":
     app.run(port=3000, debug=True)

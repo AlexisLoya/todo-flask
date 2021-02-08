@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}
+{{ super() }}
+404
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>404</h1>
+    <h2>No se ha encontrado lo que buscabas</h2>
+    <a href="{{ url_for('Index')}}"> ir al inicio</a>
+    
+</div>
+{% endblock %}

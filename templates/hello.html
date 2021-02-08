@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% import 'macros.html' as macros %}
+{% import 'bootstrap/wtf.html' as wtf %}
+{% block title %}
+    {{ super() }}
+    Bienvenido 
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        {% if  name %}
+            <h1>Bienvenido, {{ name | capitalize}}</h1>
+            {% if  user_ip %}
+            <span>tu ip es {{user_ip}}</span>            
+        {% else %}
+            <a href="{{ url_for('Index')}}"> ir al inicio</a>
+        {% endif %}
+        <div class="container mb-4">
+            <h2>Crea una nueva tarea</h2>
+            {{ wtf.quick_form(todo_form) }}
+        </div>
+        
+        <div class="container mt-5">
+            {% if todos%}
+            <ul class="list-group">
+                {% for todo in todos %}
+                {{ macros.render_todo(todo) }}
+                {% endfor %}
+            </ul>
+    
+            {% else %}
+            <h4>Aún no haz creado ningúna tarea. ¡Crea una!</h4>
+            {% endif %}
+        </div>
+        
+       
+        {% else %}
+            <a href="{{ url_for('Index')}}"> ir al inicio</a>
+        {% endif%}
+    </div>
+{% endblock %} 

@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% import 'macros.html' as macros %}
+{% import 'bootstrap/wtf.html' as wtf %}
+{% block title %}
+    {{ super() }}
+    Bienvenido 
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        {% if  name %}
+            <h1>Perfil</h1>
+            <div class="container mb-4">
+                <h2>Cambiar contraseña</h2>
+                {{wtf.quick_form(change_password)}}
+            </div>
+           
+        {% else %}
+            <a href="{{ url_for('Index')}}"> ir al inicio</a>
+        {% endif %}
+    </div>
+{% endblock %} 

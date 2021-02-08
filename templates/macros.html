@@ -1,0 +1,23 @@
+{% macro render_todo(todo) %}
+
+<li>
+    <div class="row ">
+        <div class="col-xs-5">
+            {% if todo[4] == 0 %}
+            <label class="control-label" style="color: black;" > Descipción:{{ todo[3] }}</label>
+            {%else%}
+            <label class="control-label" style="color: black; text-decoration:line-through;" > Descipción:{{ todo[3] }}</label>
+            {% endif %}
+        </div>
+        <div class="col-xs-4">
+            {% if todo[4] == 0 %}
+                <a href="/edit/{{todo[2]}}"><button type="button" class="btn btn-success btn-sm">Terminar</button></a>
+            {%else%}
+            <button type="button" class="btn btn-primary btn-sm" disabled>Terminado</button>
+            <span id="inputSuccess4Status" class="sr-only">(success)</span>
+            {% endif %}
+            <a class="mr-1"href="/delete/{{todo[2]}}"><button type="button" class="btn btn-darger btn-sm btn-delete">Eliminar</button></a>
+        </div>
+    </div>
+</li>
+{% endmacro %}
