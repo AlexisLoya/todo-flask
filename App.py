@@ -8,10 +8,10 @@ from config import Config
 app = Flask(__name__)
 
 # Mysql Connection
-app.config['MYSQL_HOST'] = '127.0.0.1'
-app.config['MYSQL_PORT'] = 3307
-app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = 'root'
+app.config['MYSQL_HOST'] = 'todos-database.cj4midcurokg.us-east-1.rds.amazonaws.com'
+app.config['MYSQL_PORT'] = 3306
+app.config['MYSQL_USER'] = 'admin'
+app.config['MYSQL_PASSWORD'] = 'admin123'
 app.config['MYSQL_DB'] = 'todo_list'
 #Bootstrap
 bootstrap = Bootstrap(app)
@@ -177,8 +177,7 @@ def delete_contact(id):
     cur.execute('DELETE FROM todo_list.todos WHERE id_todos = {0}'.format(id))
     mysql.connection.commit()
     flash('tarea Eliminada','warning')
-    session.clear()
-    return make_response(redirect('/'))
+    return redirect(url_for('hello'))
 
 
 @app.route('/perfil/<id>', methods = ['POST','GET'])
@@ -206,7 +205,8 @@ def perfil(id):
         cur.execute('DELETE FROM todo_list.users WHERE id_user =%s',[id])
         mysql.connection.commit()
         flash('Cuenta eliminada', 'danger')
-        return redirect(url_for('logout'))
+        session.clear()
+        return make_response(redirect('/'))
 
     return render_template('profile.html', **context)
     
